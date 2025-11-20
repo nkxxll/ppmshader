@@ -1,23 +1,31 @@
 //! By convention, root.zig is the root source file when making a library.
 const std = @import("std");
+const Allocator = std.mem.Allocator;
+const Writer = std.io.Writer;
 
-pub fn bufferedPrint() !void {
-    // Stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
+pub const PPMImage = struct {
+    width: u32,
+    height: u32,
+    maxval: u32,
+    data: []u8,
+    allocator: Allocator,
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    pub fn initMaxval(width: u32, height: u32, maxval: u32, allocator: Allocator) !PPMImage {
+        const size = width * height * 3;
+        const data = try allocator.alloc(u8, size);
+        return PPMImage{ .width = width, .height = height, .maxval = maxval, .data = data, .allocator = allocator };
+    }
 
-    try stdout.flush(); // Don't forget to flush!
-}
+    pub fn init(width: u32, height: u32, allocator: Allocator) !PPMImage {
+        return try initMaxval(width, height, 255, allocator);
+    }
 
-pub fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
+    pub fn write(self: PPMImage, writer: *Writer) !void {
+        try writer.print("PM6\n{d}\n{d}\n{d}\n", .{ self.width, self.height, self.maxval });
+        try writer.writeAll(self.data);
+    }
 
-test "basic add functionality" {
-    try std.testing.expect(add(3, 7) == 10);
-}
+    pub fn deinit(self: PPMImage) void {
+        self.allocator.free(self.data);
+    }
+};
