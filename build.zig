@@ -96,6 +96,10 @@ pub fn build(b: *std.Build) void {
     // steps (e.g. a Run step, as we will see in a moment).
     const run_step = b.step("run", "Run the app");
 
+    // this is the command that creates the program and makes the png from the
+    // ppm
+    const png_step = b.step("png", "Make a png");
+
     // This creates a RunArtifact step in the build graph. A RunArtifact step
     // invokes an executable compiled by Zig. Steps will only be executed by the
     // runner if invoked directly by the user (in the case of top level steps)
@@ -104,6 +108,17 @@ pub fn build(b: *std.Build) void {
     // the user runs `zig build run`, so we create a dependency link.
     const run_cmd = b.addRunArtifact(exe);
     run_step.dependOn(&run_cmd.step);
+    const png_cmd = b.addSystemCommand(&[_][]const u8{ "magick", "test.ppm", "image.png" });
+    const open_cmd = b.addSystemCommand(&[_][]const u8{ "xdg-open", "image.png" });
+    png_cmd.step.dependOn(&run_cmd.step);
+    open_cmd.step.dependOn(&png_cmd.step);
+    png_step.dependOn(&open_cmd.step);
+
+    const clean_step = b.step("clean", "Make it all clean");
+    const clean_img = b.addSystemCommand(&[_][]const u8{ "rm", "-f", "image.png" });
+    const clean_ppm = b.addSystemCommand(&[_][]const u8{ "rm", "-f", "test.ppm" });
+    clean_step.dependOn(&clean_img.step);
+    clean_step.dependOn(&clean_ppm.step);
 
     // By making the run step depend on the default step, it will be run from the
     // installation directory rather than directly from within the cache directory.

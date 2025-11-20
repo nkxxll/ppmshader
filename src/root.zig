@@ -21,8 +21,9 @@ pub const PPMImage = struct {
     }
 
     pub fn write(self: PPMImage, writer: *Writer) !void {
-        try writer.print("PM6\n{d}\n{d}\n{d}\n", .{ self.width, self.height, self.maxval });
+        try writer.print("P6\n{d}\n{d}\n{d}\n", .{ self.width, self.height, self.maxval });
         try writer.writeAll(self.data);
+        try writer.flush();
     }
 
     pub fn deinit(self: PPMImage) void {
