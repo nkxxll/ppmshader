@@ -10,5 +10,6 @@ pub fn main() !void {
     }
     const allocator = gpa.allocator();
 
-    try ppmshader.shuffleBoardAnimation(60, 16, 9, allocator);
+    // try ppmshader.shuffleBoardAnimation(60, 16, 9, allocator);
+    try ppmshader.coolShader(60, 1280, 720, allocator);
 }
